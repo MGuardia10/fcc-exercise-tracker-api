@@ -31,45 +31,55 @@ router.post('/:_id/exercises', async (req, res) => {
     try {
         const { _id } = req.params;
         const { description, duration, date } = req.body;
-        let stringDate = new Date(date);
-        // /^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$/
-
-        if(stringDate === 'Invalid Date') {
-            stringDate = new Date();
+        const dateRegEx = /^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$/;
+        let formatDate;
+    
+        //Establecer la fecha
+        if (!dateRegEx.test(date) && date) {
+          res.json({
+            error: 'Invalid Date added'
+          })
         }
-
+    
+        if (!date) {
+          formatDate = new Date();
+        } else {
+          formatDate = new Date(date);
+        }
+        
+        //Buscar usuario por id
         const user = await User.findById(_id);
-
-        if(!user) {
-            res.json({
-                error: `user with id ${_id} not found`
-            })
+        if (!user) {
+          res.json({
+            error: `user with id ${_id} not found`
+          })
         }
-
+        
+        //Crear data para el ejercicio
         const data = {
-            username: user.username,
-            id: user._id,
-            description,
-            duration,
-            date: stringDate
+          username: user.username,
+          id: user._id,
+          description,
+          duration,
+          date: formatDate
         }
-
+    
         //Creating and saving exercise
         const exercise = new Exercise(data)
         await exercise.save()
-
+    
         res.json(exercise)
-
+    
     } catch (error) {
         console.log(error)
     }
-
+    
 })
 
 router.get('/:_id/logs', async(req, res) => {
     const { _id } = req.params;
     let count = 0;
-    let { from = '1000-01-01', to =  '9999-12-31', limit = 2 } = req.query;
+    let { from = '1000-01-01', to =  '9999-12-31', limit = 5 } = req.query;
     
 try {
     //Find exercises with the same ID
